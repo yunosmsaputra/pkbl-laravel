@@ -30,7 +30,7 @@ class DemografiController extends Controller
 		return view('index');
 	}
     
-    public function downloadpost(Request $request, $bumn=null, $tahun=null, $periode=null)
+    public function download(Request $request, $bumn=null, $tahun=null, $periode=null)
     {
     	ini_set('memory_limit', '-1');
     	$param = array(
@@ -53,7 +53,7 @@ class DemografiController extends Controller
 			)
 		);
 
-	 	$sheet->getColumnDimension('A')->setVisible(false);
+	 	$sheet->getColumnDimension('A')->setVisibility('hidden');
 	 	$sheet->setCellValue('A1', Crypt::encryptString($bumn.';'.$tahun.';'.$periode));
 
 		$sheet->setCellValue('B2', 'PT Telkom Tbk');

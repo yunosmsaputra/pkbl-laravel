@@ -3,7 +3,7 @@
 	<input type="file" name="file">
 	<input type="submit">
 </form>
-<a href="#" onclick="downloasd()">download excel</a>
+<a href="/download/AABR/2019/1" onclick="downloasd()">download excel</a>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 	function downloasd(){
