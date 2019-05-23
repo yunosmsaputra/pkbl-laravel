@@ -53,7 +53,7 @@ class DemografiController extends Controller
 			)
 		);
 
-	 	$sheet->getColumnDimension('A')->setVisibility('hidden');
+	 	$sheet->getColumnDimension('A')->setVisible(false);
 	 	$sheet->setCellValue('A1', Crypt::encryptString($bumn.';'.$tahun.';'.$periode));
 
 		$sheet->setCellValue('B2', 'PT Telkom Tbk');
@@ -197,15 +197,36 @@ class DemografiController extends Controller
 	 	$sheet->getStyle('K')->getNumberFormat()->setFormatCode('yyyy-mm-dd');
 	 	$sheet->getStyle('K'.$i)->getNumberFormat()->setFormatCode('@');
 
-	 	$sheet->getStyle('B:V')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('B')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('C')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('D')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('E')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('F')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('G')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('H')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('I')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('J')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('K')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('L')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('M')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('N')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('O')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('P')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('Q')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('R')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('S')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('T')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('U')->getProtection()->setLocked('unprotected');
+	 	$sheet->getStyle('V')->getProtection()->setLocked('unprotected');
 	 	$sheet->getStyle('B8:D'.($i-1))->getProtection()->setLocked('unprotected');
 	 	$sheet->getStyle('F8:O'.($i-1))->getProtection()->setLocked('unprotected');
 	 	$sheet->getStyle('Q8:V'.($i-1))->getProtection()->setLocked('unprotected');
 	 	$sheet->getStyle('B'.$i.':V'.$i)->getProtection()->setLocked('unprotected');
+	 	
 	 	$sheet->freezePane('B8');
 
 	 	$sheet->getProtection()->setSheet(true);
-	 	$sheet->getProtection()->setSelectLockedCells(true);
+	 	// $sheet->getProtection()->setSelectLockedCells(true);
 	 	$sheet->getProtection()->setSelectUnlockedCells(false);
 		$sheet->getProtection()->setSort(true);
 		$sheet->getProtection()->setInsertRows(true);
