@@ -12,5 +12,6 @@
 */
 
 Route::get('/', 'DemografiController@index');
-Route::get('/download/{id_bumn?}/{tahun?}/{periode?}', 'DemografiController@download');
-Route::post('/import', 'DemografiController@import');
+
+Route::get('/api/download/{id_bumn?}/{tahun?}/{periode?}', 'DemografiController@download');
+Route::post('/api/import', 'DemografiController@import');

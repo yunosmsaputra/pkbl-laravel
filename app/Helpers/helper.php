@@ -49,4 +49,9 @@ class Helper
 				->select('nik')
 				->groupBy('nik');
 	}
+
+	public static function get_detail_periode($id){
+		return DB::table('pkbl_periode_ref')
+				->where('id', $id);
+	}
 }

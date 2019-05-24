@@ -30,3 +30,49 @@
 	    });
 	}
 </script>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="portlet light">
+			<div class="portlet-title">
+				<div class="caption font-green-haze">
+					<i class="icon-setting font-green-haze"></i>
+					<span class="caption-subject bold uppercase">Hasil Validasi</span>
+				</div>
+				<div class="actions">
+					<a class="btn btn-circle btn-icon-only btn-default fullscreen" href="javascript:;" data-original-title="" title=""></a>
+				</div>
+			</div>
+			<div class="portlet-body table-responsive">
+				<table class="table table-hover table-striped table-bordered" style="white-space: nowrap;">
+					<thead>
+						<tr>
+							<th width="80px">Kode Provinsi</th>
+							<th width="80px">Kode Kab/Kota</th>
+							<th width="150px">Nama</th>
+							<th width="130px">No KTP</th>
+							<th width="250px">Alamat</th>
+							<th width="80px">Jenis Kelamin</th>
+							<th width="80px">Tanggal Lahir</th>
+							<th width="100px"><div align="center">Jumlah Pinjaman (Rp.)</div></th>
+							<th width="100px"><div align="center">Posisi Pinjaman (Rp.)</div></th>
+							<th width="80px">Tanggal Perjanjian</th>
+							<th width="80px">Jumlah Tenaga Kerja</th>
+							<th width="80px">Kode Status</th>
+							<th width="100px"><div align="center">Posisi Aset (Rp.)</div></th>
+							<th width="100px"><div align="center">Omset (Rp.)</div></th>
+							<th width="80px">Pinjaman Ke-</th>
+							<th width="100px">Kode Jenis Usaha</th>
+							<th width="100px">Jenis Produk</th>
+							<th width="100px">Pinjaman Khusus</th>
+							<th width="100px">Kode Sektor Usaha</th>
+							<th width="100px">Kode Kategori Usaha</th>
+							<th width="80px">Unggulan</th>
+							<th width="250px">Keterangan</th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>

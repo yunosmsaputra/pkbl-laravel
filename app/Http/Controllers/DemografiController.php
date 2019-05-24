@@ -226,8 +226,6 @@ class DemografiController extends Controller
 	 	$sheet->freezePane('B8');
 
 	 	$sheet->getProtection()->setSheet(true);
-	 	// $sheet->getProtection()->setSelectLockedCells(true);
-	 	$sheet->getProtection()->setSelectUnlockedCells(false);
 		$sheet->getProtection()->setSort(true);
 		$sheet->getProtection()->setInsertRows(true);
 		$sheet->getProtection()->setPassword('bumn234');
@@ -244,202 +242,302 @@ class DemografiController extends Controller
     }
 
     public function import(Request $request){
-    	if ($request->hasFile('file')) {
-    		$sheet = IOFactory::load($request->file('file')->path());
-            $data = $sheet->setActiveSheetIndex(0);
-            $highest_columm = $data->getHighestColumn();
-            $highest_row = $data->getHighestRow();
+    	if ($request->hasFile('importexcel')) {
+    		if($request->file('importexcel')->getClientOriginalExtension() == 'xls'){
+	    		$sheet = IOFactory::load($request->file('importexcel')->path());
+	            $data = $sheet->setActiveSheetIndex(0);
+	            $highest_columm = $data->getHighestColumn();
+	            $highest_row = $data->getHighestRow();
 
-            $decryptString = explode(';', Crypt::decryptString($data->getCell('A1')->getValue()));
-            $param = array(
-    			'bumn' => $decryptString[0],
-    			'tahun' => $decryptString[1],
-    			'periode' => $decryptString[2]
-    		);
-	    	$olddata = $this->history->data($param)->count();
+	            $decryptString = explode(';', Crypt::decryptString($data->getCell('A1')->getValue()));
+	            $param = array(
+	    			'bumn' => $decryptString[0],
+	    			'tahun' => $decryptString[1],
+	    			'periode' => $decryptString[2]
+	    		);
+	    		if (($param['bumn'] == $request->id_bumn_pembina_enc) && ($param['tahun'] == $request->tahun_laporan_enc) && ($param['periode'] == $request->id_periode_enc)){
+			    	$olddata = $this->history->data($param)->count();
 
-            $ref_provinsi = Helper::get_referensi_provinsi()->pluck('kode')->all();
-            $ref_kabkota = Helper::get_referensi_kabkota()->pluck('kode')->all();
-            $ref_status = Helper::get_referensi_status()->pluck('id_status')->all();
-            $ref_jenisusaha = Helper::get_referensi_jenisusaha()->pluck('id_jenisusaha')->all();
-            $ref_sektorusaha = Helper::get_referensi_sektorusaha()->pluck('id_ref_sektorusaha')->all();
-            $ref_kategoriusaha = Helper::get_referensi_kategoriusaha()->pluck('kode_kategoriusaha')->all();
-            $nik_bumn = Helper::get_nik_from_bumn('AABR')->pluck('nik')->all();
-            $nik_other = Helper::get_nik_other_bumn('AABR')->pluck('nik')->all();
+		            $ref_provinsi = Helper::get_referensi_provinsi()->pluck('kode')->all();
+		            $ref_kabkota = Helper::get_referensi_kabkota()->pluck('kode')->all();
+		            $ref_status = Helper::get_referensi_status()->pluck('id_status')->all();
+		            $ref_jenisusaha = Helper::get_referensi_jenisusaha()->pluck('id_jenisusaha')->all();
+		            $ref_sektorusaha = Helper::get_referensi_sektorusaha()->pluck('id_ref_sektorusaha')->all();
+		            $ref_kategoriusaha = Helper::get_referensi_kategoriusaha()->pluck('kode_kategoriusaha')->all();
+		            $nik_bumn = Helper::get_nik_from_bumn('AABR')->pluck('nik')->all();
+		            $nik_other = Helper::get_nik_other_bumn('AABR')->pluck('nik')->all();
 
-            $datas = [];
-            $errors = [];
-            $x = 0; $y = 0;
-        	for ($j=8; $j <= $highest_row ; $j++) {  
-        		//cek referensi 
-            	if(in_array($data->getCell('B'.$j)->getValue(), $ref_provinsi) && 
-            		in_array($data->getCell('C'.$j)->getValue(), $ref_kabkota) && 
-            		in_array($data->getCell('M'.$j)->getValue(), $ref_status) && 
-            		in_array($data->getCell('R'.$j)->getValue(), $ref_jenisusaha) && 
-            		in_array($data->getCell('T'.$j)->getValue(), $ref_sektorusaha) && 
-            		in_array($data->getCell('U'.$j)->getValue(), $ref_kategoriusaha) && 
-            		$data->getCell('A'.$j)->getValue() <> '')
-            	{
-		            for ($i='A'; $i <= $highest_columm; $i++) { 
-	            		$datas[$x][] = $data->getCell($i.$j)->getValue();
-	            	}
-            		$datas[$x][] = '';
-	            	$x++;
-	            }else if (
-	            	$data->getCell('A'.$j)->getValue() == '' && 
-	            	((in_array($data->getCell('E'.$j)->getValue(), $nik_bumn) && $data->getCell('Q'.$j)->getValue() == '2') || (!in_array($data->getCell('E'.$j)->getValue(), $nik_bumn) && $data->getCell('Q'.$j)->getValue() <> '2')) &&
-	            	!in_array($data->getCell('E'.$j)->getValue(), $nik_other) && 
-	            	in_array($data->getCell('B'.$j)->getValue(), $ref_provinsi) && 
-	            	in_array($data->getCell('C'.$j)->getValue(), $ref_kabkota) && 
-	            	in_array($data->getCell('M'.$j)->getValue(), $ref_status) && 
-	            	in_array($data->getCell('R'.$j)->getValue(), $ref_jenisusaha) && 
-	            	in_array($data->getCell('T'.$j)->getValue(), $ref_sektorusaha) && 
-	            	in_array($data->getCell('U'.$j)->getValue(), $ref_kategoriusaha))
-	            {
-	            	for ($i='A'; $i <= $highest_columm; $i++) { 
-	            		$datas[$x][] = $data->getCell($i.$j)->getValue();
-	            	}
-            		$datas[$x][] = '';
-	            	$x++;
-            	}else{
-            		if($data->getCell('B'.$j)->getValue() <> ''){
-	            		for ($i='A'; $i <= $highest_columm; $i++) { 
-		            		$errors[$y][] = $data->getCell($i.$j)->getValue();
+		            $datas = [];
+		            $errors = [];
+		            $x = 0; $y = 0;
+		        	for ($j=8; $j <= $highest_row ; $j++) {  
+		        		//cek referensi 
+		            	if(in_array($data->getCell('B'.$j)->getValue(), $ref_provinsi) && 
+		            		in_array($data->getCell('C'.$j)->getValue(), $ref_kabkota) && 
+		            		in_array($data->getCell('M'.$j)->getValue(), $ref_status) && 
+		            		in_array($data->getCell('R'.$j)->getValue(), $ref_jenisusaha) && 
+		            		in_array($data->getCell('T'.$j)->getValue(), $ref_sektorusaha) && 
+		            		in_array($data->getCell('U'.$j)->getValue(), $ref_kategoriusaha) && 
+		            		$data->getCell('A'.$j)->getValue() <> '')
+		            	{
+				            for ($i='A'; $i <= $highest_columm; $i++) { 
+			            		$datas[$x][] = $data->getCell($i.$j)->getValue();
+			            	}
+		            		$datas[$x][] = '';
+			            	$x++;
+			            }else if (
+			            	$data->getCell('A'.$j)->getValue() == '' && 
+			            	((in_array($data->getCell('E'.$j)->getValue(), $nik_bumn) && $data->getCell('Q'.$j)->getValue() == '2') || (!in_array($data->getCell('E'.$j)->getValue(), $nik_bumn) && $data->getCell('Q'.$j)->getValue() <> '2')) &&
+			            	!in_array($data->getCell('E'.$j)->getValue(), $nik_other) && 
+			            	in_array($data->getCell('B'.$j)->getValue(), $ref_provinsi) && 
+			            	in_array($data->getCell('C'.$j)->getValue(), $ref_kabkota) && 
+			            	in_array($data->getCell('M'.$j)->getValue(), $ref_status) && 
+			            	in_array($data->getCell('R'.$j)->getValue(), $ref_jenisusaha) && 
+			            	in_array($data->getCell('T'.$j)->getValue(), $ref_sektorusaha) && 
+			            	in_array($data->getCell('U'.$j)->getValue(), $ref_kategoriusaha))
+			            {
+			            	for ($i='A'; $i <= $highest_columm; $i++) { 
+			            		$datas[$x][] = '<td>'.$data->getCell($i.$j)->getValue().'<td>';
+			            	}
+		            		$datas[$x][] = '';
+			            	$x++;
+		            	}else{
+		            		if($data->getCell('B'.$j)->getValue() <> ''){
+			            		for ($i='A'; $i <= $highest_columm; $i++) { 
+				            		$errors[$y][] = '<td>'.$data->getCell($i.$j)->getValue().'</td>';
+				            	}
+				            	$ket = [];
+			            		if(!in_array($data->getCell('B'.$j)->getValue(), $ref_provinsi)){
+			            			$errors[$y][1] = '<td><span class="label label-warning">'.$data->getCell('B'.$j)->getValue().'</span></td>';
+					            	$ket[] = 'Kode Provinsi tidak terdaftar.';
+			            		}
+			            		if(!in_array($data->getCell('C'.$j)->getValue(), $ref_kabkota)){
+			            			$errors[$y][2] = '<td><span class="label label-warning">'.$data->getCell('C'.$j)->getValue().'</span></td>';
+					            	$ket[] = 'Kode Kabupaten/Kota tidak terdaftar.';
+			            		}
+			            		if(!in_array($data->getCell('M'.$j)->getValue(), $ref_status)){
+					            	$ket[] = 'Kode Status tidak terdaftar.';
+			            		}
+			            		if(!in_array($data->getCell('R'.$j)->getValue(), $ref_jenisusaha)){
+					            	$ket[] = 'Kode Jenis Usaha tidak terdaftar.';
+			            		}
+			            		if(!in_array($data->getCell('T'.$j)->getValue(), $ref_sektorusaha)){
+					            	$ket[] = 'Kode Sektor Usaha tidak terdaftar.';
+			            		}
+			            		if(!in_array($data->getCell('U'.$j)->getValue(), $ref_kategoriusaha)){
+					            	$ket[] = 'Kode Kategori Usaha tidak terdaftar.';
+			            		}
+
+			            		if($data->getCell('A'.$j)->getValue() == ""){
+			            			if(in_array($data->getCell('E'.$j)->getValue(), $nik_bumn)){
+						            	$ket[] = 'No Induk Kependudukan tersebut masih memiliki pinjaman aktif.';
+			            			}
+			            			if(in_array($data->getCell('E'.$j)->getValue(), $nik_other)){
+						            	$ket[] = 'No Induk Kependudukan tersebut masih aktif sebagai mitra BUMN lain.';
+			            			}
+			            			if($data->getCell('Q'.$j)->getValue() == '2' && !in_array($data->getCell('E'.$j)->getValue(), $nik_bumn)){
+						            	$ket[] = 'Pinjaman Khusus sebagai Top Up namun tidak terdapat mitra dengan No Induk Kependudukan tersebut yang masih memiliki pinjaman aktif (outstanding).';
+			            			}
+			            		}
+			            		$errors[$y][] = $ket;
+				            	$y++;
+		            		}
 		            	}
-		            	$ket = [];
-	            		if(!in_array($data->getCell('B'.$j)->getValue(), $ref_provinsi)){
-			            	$ket[] = 'Kode Provinsi tidak terdaftar.';
-	            		}
-	            		if(!in_array($data->getCell('C'.$j)->getValue(), $ref_kabkota)){
-			            	$ket[] = 'Kode Kabupaten/Kota tidak terdaftar.';
-	            		}
-	            		if(!in_array($data->getCell('M'.$j)->getValue(), $ref_status)){
-			            	$ket[] = 'Kode Status tidak terdaftar.';
-	            		}
-	            		if(!in_array($data->getCell('R'.$j)->getValue(), $ref_jenisusaha)){
-			            	$ket[] = 'Kode Jenis Usaha tidak terdaftar.';
-	            		}
-	            		if(!in_array($data->getCell('T'.$j)->getValue(), $ref_sektorusaha)){
-			            	$ket[] = 'Kode Sektor Usaha tidak terdaftar.';
-	            		}
-	            		if(!in_array($data->getCell('U'.$j)->getValue(), $ref_kategoriusaha)){
-			            	$ket[] = 'Kode Kategori Usaha tidak terdaftar.';
-	            		}
+		            }
+		            $result = array('data' => $datas, 'error' => $errors);
+		            if(sizeof($errors) <= 0){
+		            	$param_demografi = [];
+		            	$param_history = [];
+		            	foreach ($datas as $key => $value) {
+		            		if($value[0] == ''){
+			            		$ins_demografi = self::store_demografi(array(
+			            			'id_bumn_pembina' => $param['bumn'],
+			            			'id_periode' => $param['periode'],
+			            			'tahun_laporan' => $param['tahun'],
+			            			'kode_provinsi' => $value[1],
+			            			'kode_kabkota' => $value[2],
+			            			'nama' => $value[3],
+									'nik' => $value[4],
+									'alamat' => $value[5],
+									'jenis_kelamin' => $value[6],
+									'jenis_produk' => $value[18],
+									'tgl_lahir' => $value[7],
+									'jumlah_pinjaman_rp' => $value[8],
+									'tanggal_perjanjian' => $value[10],
+									'jumlah_tk' => $value[11],
+									'pinjaman_ke' => $value[15],
+									'pinjaman_khusus' => $value[16],
+									'kode_jenisusaha' => $value[17],
+									'add_by' => 'yuno',
+		        					'add_date' => date('Y-m-d H:m:s'),
+									'kode_sektorusaha' => $value[19],
+									'kode_kategoriusaha' => $value[20]
+		            			));
 
-	            		if($data->getCell('A'.$j)->getValue() == ""){
-	            			if(in_array($data->getCell('E'.$j)->getValue(), $nik_bumn)){
-				            	$ket[] = 'No Induk Kependudukan tersebut masih memiliki pinjaman aktif.';
-	            			}
-	            			if(in_array($data->getCell('E'.$j)->getValue(), $nik_other)){
-				            	$ket[] = 'No Induk Kependudukan tersebut masih aktif sebagai mitra BUMN lain.';
-	            			}
-	            			if($data->getCell('Q'.$j)->getValue() == '2' && !in_array($data->getCell('E'.$j)->getValue(), $nik_bumn)){
-				            	$ket[] = 'Pinjaman Khusus sebagai Top Up namun tidak terdapat mitra dengan No Induk Kependudukan tersebut yang masih memiliki pinjaman aktif (outstanding).';
-	            			}
-	            		}
-	            		$errors[$y][] = $ket;
-		            	$y++;
-            		}
-            	}
-            }
-            $result = array('data' => $datas, 'error' => $errors);
-            if(sizeof($errors) <= 0){
-            	$param_demografi = [];
-            	$param_history = [];
-            	foreach ($datas as $key => $value) {
-            		if($value[0] == ''){
-	            		$ins_demografi = self::store_demografi(array(
-	            			'id_bumn_pembina' => $param['bumn'],
-	            			'id_periode' => $param['periode'],
-	            			'tahun_laporan' => $param['tahun'],
-	            			'kode_provinsi' => $value[1],
-	            			'kode_kabkota' => $value[2],
-	            			'nama' => $value[3],
-							'nik' => $value[4],
-							'alamat' => $value[5],
-							'jenis_kelamin' => $value[6],
-							'jenis_produk' => $value[18],
-							'tgl_lahir' => $value[7],
-							'jumlah_pinjaman_rp' => $value[8],
-							'tanggal_perjanjian' => $value[10],
-							'jumlah_tk' => $value[11],
-							'pinjaman_ke' => $value[15],
-							'pinjaman_khusus' => $value[16],
-							'kode_jenisusaha' => $value[17],
-							'add_by' => 'yuno',
-        					'add_date' => date('Y-m-d H:m:s'),
-							'kode_sektorusaha' => $value[19],
-							'kode_kategoriusaha' => $value[20]
-            			));
+		            			self::store_history(array(
+			        					'id_kinerja_transaksi_demografimb' => DB::getPdo()->lastInsertId(),
+			        					'nik' => $value[4],
+			        					'id_bumn_pembina' => $param['bumn'],
+			        					'id_periode' => $param['periode'],
+			        					'tahun_laporan' => $param['tahun'],
+			        					'kode_provinsi' => $value[1],
+			        					'kode_kabkota' => $value[2],
+			        					'posisi_pinjaman_rp' => $value[9],
+			        					'kode_status' => $value[12],
+			        					'posisi_aset_rp' => $value[13],
+			        					'omset_rp' => $value[14],
+			        					'unggulan' => $value[21],
+			        					'add_by' => 'Yuno',
+			        					'add_date' => date('Y-m-d H:m:s')
+			        				));
+		            		}else{
+		            			if($this->history->where('id_kinerja_transaksi_demografimb', $value[0])->where('tahun_laporan', $param['tahun'])->where('id_periode', $param['periode'])->first()){
+		            				self::update_history(array(
+			        					'id_kinerja_transaksi_demografimb' => $value[0],
+			        					'nik' => $value[4],
+			        					'id_bumn_pembina' => $param['bumn'],
+			        					'id_periode' => $param['periode'],
+			        					'tahun_laporan' => $param['tahun'],
+			        					'kode_provinsi' => $value[1],
+			        					'kode_kabkota' => $value[2],
+			        					'posisi_pinjaman_rp' => $value[9],
+			        					'kode_status' => $value[12],
+			        					'posisi_aset_rp' => $value[13],
+			        					'omset_rp' => $value[14],
+			        					'unggulan' => $value[21],
+			        					'update_by' => 'Yuno',
+			        					'update_date' => date('Y-m-d H:m:s')
+			        				));
+		            			}else{
+			            			self::store_history(array(
+			        					'id_kinerja_transaksi_demografimb' => $value[0],
+			        					'nik' => $value[4],
+			        					'id_bumn_pembina' => $param['bumn'],
+			        					'id_periode' => $param['periode'],
+			        					'tahun_laporan' => $param['tahun'],
+			        					'kode_provinsi' => $value[1],
+			        					'kode_kabkota' => $value[2],
+			        					'posisi_pinjaman_rp' => $value[9],
+			        					'kode_status' => $value[12],
+			        					'posisi_aset_rp' => $value[13],
+			        					'omset_rp' => $value[14],
+			        					'unggulan' => $value[21],
+			        					'add_by' => 'Yuno',
+			        					'add_date' => date('Y-m-d H:m:s')
+			        				));
+		            			}
+		            		}
+		            	}
 
-            			self::store_history(array(
-	        					'id_kinerja_transaksi_demografimb' => DB::getPdo()->lastInsertId(),
-	        					'nik' => $value[4],
-	        					'id_bumn_pembina' => $param['bumn'],
-	        					'id_periode' => $param['periode'],
-	        					'tahun_laporan' => $param['tahun'],
-	        					'kode_provinsi' => $value[1],
-	        					'kode_kabkota' => $value[2],
-	        					'posisi_pinjaman_rp' => $value[9],
-	        					'kode_status' => $value[12],
-	        					'posisi_aset_rp' => $value[13],
-	        					'omset_rp' => $value[14],
-	        					'unggulan' => $value[21],
-	        					'add_by' => 'Yuno',
-	        					'add_date' => date('Y-m-d H:m:s')
-	        				));
-            		}else{
-            			if($this->history->where('id_kinerja_transaksi_demografimb', $value[0])->where('tahun_laporan', $param['tahun'])->where('id_periode', $param['periode'])->first()){
-            				self::update_history(array(
-	        					'id_kinerja_transaksi_demografimb' => $value[0],
-	        					'nik' => $value[4],
-	        					'id_bumn_pembina' => $param['bumn'],
-	        					'id_periode' => $param['periode'],
-	        					'tahun_laporan' => $param['tahun'],
-	        					'kode_provinsi' => $value[1],
-	        					'kode_kabkota' => $value[2],
-	        					'posisi_pinjaman_rp' => $value[9],
-	        					'kode_status' => $value[12],
-	        					'posisi_aset_rp' => $value[13],
-	        					'omset_rp' => $value[14],
-	        					'unggulan' => $value[21],
-	        					'update_by' => 'Yuno',
-	        					'update_date' => date('Y-m-d H:m:s')
-	        				));
-            			}else{
-	            			self::store_history(array(
-	        					'id_kinerja_transaksi_demografimb' => $value[0],
-	        					'nik' => $value[4],
-	        					'id_bumn_pembina' => $param['bumn'],
-	        					'id_periode' => $param['periode'],
-	        					'tahun_laporan' => $param['tahun'],
-	        					'kode_provinsi' => $value[1],
-	        					'kode_kabkota' => $value[2],
-	        					'posisi_pinjaman_rp' => $value[9],
-	        					'kode_status' => $value[12],
-	        					'posisi_aset_rp' => $value[13],
-	        					'omset_rp' => $value[14],
-	        					'unggulan' => $value[21],
-	        					'add_by' => 'Yuno',
-	        					'add_date' => date('Y-m-d H:m:s')
-	        				));
-            			}
-            		}
-            	}
+		            	$ins_monitoring = self::store_monitoring_laporan(array(
+		            			'id_bumn_pembina' => $param['bumn'],
+		            			'id_periode' => $param['periode'],
+		            			'tahun_laporan' => $param['tahun'],
+		            			'modelaporan' => 'demografimb',
+		            			'nilai' => '2',
+								'created_date' => date('Y-m-d H:i:s'),
+								'created_by' => 'Yuno'
+		        			));
+		            }else{
+		            	$html = '<div class="row">
+									<div class="col-md-12">
+										<div class="portlet light">
+											<div class="portlet-title">
+												<div class="caption font-green-haze">
+													<i class="icon-setting font-green-haze"></i>
+													<span class="caption-subject bold uppercase">Hasil Validasi</span>
+												</div>
+												<div class="actions">
+													<a class="btn btn-circle btn-icon-only btn-default fullscreen" href="javascript:;" data-original-title="" title=""></a>
+												</div>
+											</div>
+											<div class="portlet-body table-responsive">
+												<table class="table table-hover table-striped table-bordered" style="white-space: nowrap;">
+													<thead>
+														<tr>
+															<th width="80px">Kode Provinsi</th>
+															<th width="80px">Kode Kab/Kota</th>
+															<th width="150px">Nama</th>
+															<th width="130px">No KTP</th>
+															<th width="250px">Alamat</th>
+															<th width="80px">Jenis Kelamin</th>
+															<th width="80px">Tanggal Lahir</th>
+															<th width="100px"><div align="center">Jumlah Pinjaman (Rp.)</div></th>
+															<th width="100px"><div align="center">Posisi Pinjaman (Rp.)</div></th>
+															<th width="80px">Tanggal Perjanjian</th>
+															<th width="80px">Jumlah Tenaga Kerja</th>
+															<th width="80px">Kode Status</th>
+															<th width="100px"><div align="center">Posisi Aset (Rp.)</div></th>
+															<th width="100px"><div align="center">Omset (Rp.)</div></th>
+															<th width="80px">Pinjaman Ke-</th>
+															<th width="100px">Kode Jenis Usaha</th>
+															<th width="100px">Jenis Produk</th>
+															<th width="100px">Pinjaman Khusus</th>
+															<th width="100px">Kode Sektor Usaha</th>
+															<th width="100px">Kode Kategori Usaha</th>
+															<th width="80px">Unggulan</th>
+															<th width="250px">Keterangan</th>
+														</tr>';
+						foreach ($errors as $key => $value) {
+							$html .= '<tr>'.$value[1].
+										$value[2].
+										$value[3].
+										$value[4].
+										$value[5].
+										$value[6].
+										$value[7].
+										$value[8].
+										$value[9].
+										$value[10].
+										$value[11].
+										$value[12].
+										$value[13].
+										$value[14].
+										$value[15].
+										$value[16].
+										$value[17].
+										$value[18].
+										$value[19].
+										$value[20].
+										$value[21].'<td>';
+							foreach ($value[22] as $k => $v) {
+								$html .= $v.'</br>';
+							}
+							$html .= '					</td>		
+															</tr>
+														</thead>
+													</table>
+												</div>
+											</div>
+										</div>
+									</div>';
+						}
+		            	return json_encode(array(
+		            		'flag' => 'warning',
+		    				'msg' => 'Data gagal disimpan karena ada beberapa data tidak sesuai atau salah dalam penulisan',
+		    				'title' => 'Notifikasi',
+		    				'feedbackdata' => $html	
+		            	));
+		            }
 
-            	$ins_monitoring = self::store_monitoring_laporan(array(
-            			'id_bumn_pembina' => $param['bumn'],
-            			'id_periode' => $param['periode'],
-            			'tahun_laporan' => $param['tahun'],
-            			'modelaporan' => 'demografimb',
-            			'nilai' => '2',
-						'created_date' => date('Y-m-d H:i:s'),
-						'created_by' => 'Yuno'
-        			));
-            }
-
-            return $result;
+	    		}else{
+	    			return json_encode(array(
+	    				'flag' => 'error',
+	    				'msg' => 'Template import salah!!!, download kembali template import sesuai peruntukan tahun dan periode',
+	    				'title' => 'Gagal Upload',
+	    				'feedbackdata' => array()
+	    			));
+	    		}
+    		}else{
+    			return json_encode(array(
+    				'flag' => 'error',
+    				'msg' => 'File import harus .xls (download terlebih dahulu templatenya)',
+    				'title' => 'Gagal Upload',
+    				'feedbackdata' => array()
+    			));
+    		}
 		}
+		echo "asdasd";
     }
 
     public function store_demografi($params){
