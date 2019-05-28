@@ -33,6 +33,7 @@ class DemografiController extends Controller
     public function download(Request $request, $bumn=null, $tahun=null, $periode=null)
     {
     	ini_set('memory_limit', '-1');
+    	ini_set('max_execution_time', 6000);
     	$param = array(
     			'bumn' => $bumn,
     			'tahun' => $tahun,
@@ -242,6 +243,7 @@ class DemografiController extends Controller
     }
 
     public function import(Request $request){
+    	ini_set('memory_limit', -1);
     	if ($request->hasFile('importexcel')) {
     		if($request->file('importexcel')->getClientOriginalExtension() == 'xls'){
 	    		$sheet = IOFactory::load($request->file('importexcel')->path());
@@ -309,34 +311,42 @@ class DemografiController extends Controller
 				            	$ket = [];
 			            		if(!in_array($data->getCell('B'.$j)->getValue(), $ref_provinsi)){
 			            			$errors[$y][1] = '<td><span class="label label-warning">'.$data->getCell('B'.$j)->getValue().'</span></td>';
-					            	$ket[] = 'Kode Provinsi tidak terdaftar.';
+					            	$ket[] = '<span class="label label-warning">Kode Provinsi tidak terdaftar.</span>';
 			            		}
 			            		if(!in_array($data->getCell('C'.$j)->getValue(), $ref_kabkota)){
 			            			$errors[$y][2] = '<td><span class="label label-warning">'.$data->getCell('C'.$j)->getValue().'</span></td>';
-					            	$ket[] = 'Kode Kabupaten/Kota tidak terdaftar.';
+					            	$ket[] = '<span class="label label-warning">Kode Kabupaten/Kota tidak terdaftar.</span>';
+			            		}
+			            		if(!in_array($data->getCell('G'.$j)->getValue(), [1, 2])){
+			            			$errors[$y][6] = '<td><span class="label label-warning">'.$data->getCell('G'.$j)->getValue().'</span></td>';
+					            	$ket[] = '<span class="label label-warning">Jenis Kelamin hanya bisa diisi (1 = Laki Laki) atau (2 = Perempuan).</span>';
 			            		}
 			            		if(!in_array($data->getCell('M'.$j)->getValue(), $ref_status)){
-					            	$ket[] = 'Kode Status tidak terdaftar.';
+			            			$errors[$y][12] = '<td><span class="label label-warning">'.$data->getCell('M'.$j)->getValue().'</span></td>';
+					            	$ket[] = '<span class="label label-warning">Kode Status tidak terdaftar.</span>';
 			            		}
 			            		if(!in_array($data->getCell('R'.$j)->getValue(), $ref_jenisusaha)){
-					            	$ket[] = 'Kode Jenis Usaha tidak terdaftar.';
+					            	$errors[$y][17] = '<td><span class="label label-warning">'.$data->getCell('R'.$j)->getValue().'</span></td>';
+					            	$ket[] = '<span class="label label-warning">Kode Jenis Usaha tidak terdaftar.</span>';
 			            		}
 			            		if(!in_array($data->getCell('T'.$j)->getValue(), $ref_sektorusaha)){
-					            	$ket[] = 'Kode Sektor Usaha tidak terdaftar.';
+					            	$errors[$y][19] = '<td><span class="label label-warning">'.$data->getCell('T'.$j)->getValue().'</span></td>';
+					            	$ket[] = '<span class="label label-warning">Kode Sektor Usaha tidak terdaftar.</span>';
 			            		}
 			            		if(!in_array($data->getCell('U'.$j)->getValue(), $ref_kategoriusaha)){
-					            	$ket[] = 'Kode Kategori Usaha tidak terdaftar.';
+					            	$errors[$y][20] = '<td><span class="label label-warning">'.$data->getCell('U'.$j)->getValue().'</span></td>';
+					            	$ket[] = '<span class="label label-warning">Kode Kategori Usaha tidak terdaftar.</span>';
 			            		}
 
 			            		if($data->getCell('A'.$j)->getValue() == ""){
 			            			if(in_array($data->getCell('E'.$j)->getValue(), $nik_bumn)){
-						            	$ket[] = 'No Induk Kependudukan tersebut masih memiliki pinjaman aktif.';
+						            	$ket[] = '<span class="label" style="background-color: #FF9800; color: #030f27;">Mitra dengan <b>No KTP</b> tersebut masih memiliki pinjaman aktif.</span>';
 			            			}
 			            			if(in_array($data->getCell('E'.$j)->getValue(), $nik_other)){
-						            	$ket[] = 'No Induk Kependudukan tersebut masih aktif sebagai mitra BUMN lain.';
+						            	$ket[] = '<span class="label" style="background-color: #FF5722; color: #030f27;">Mitra dengan <b>No KTP</b> tersebut masih aktif menjadi <b>mitra di BUMN lain</b></span>';
 			            			}
 			            			if($data->getCell('Q'.$j)->getValue() == '2' && !in_array($data->getCell('E'.$j)->getValue(), $nik_bumn)){
-						            	$ket[] = 'Pinjaman Khusus sebagai Top Up namun tidak terdapat mitra dengan No Induk Kependudukan tersebut yang masih memiliki pinjaman aktif (outstanding).';
+						            	$ket[] = '<span class="label" style="background-color: #ffc107; color: #030f27;"><b>Pinjaman Khusus</b> sebagai <b>Top Up</b> namun tidak terdapat mitra dengan <b>No KTP</b> yang masih memiliki pinjaman aktif (outstanding).</span>';
 			            			}
 			            		}
 			            		$errors[$y][] = $ket;
@@ -438,6 +448,13 @@ class DemografiController extends Controller
 								'created_date' => date('Y-m-d H:i:s'),
 								'created_by' => 'Yuno'
 		        			));
+
+		            	return json_encode(array(
+		    				'flag' => 'success',
+		    				'msg' => 'Berhasil import data',
+		    				'title' => 'Sukses',
+		    				'feedbackdata' => array()
+		    			));
 		            }else{
 		            	$html = '<div class="row">
 									<div class="col-md-12">
@@ -470,9 +487,9 @@ class DemografiController extends Controller
 															<th width="100px"><div align="center">Posisi Aset (Rp.)</div></th>
 															<th width="100px"><div align="center">Omset (Rp.)</div></th>
 															<th width="80px">Pinjaman Ke-</th>
+															<th width="80px">Pinjaman Khusus</th>
 															<th width="100px">Kode Jenis Usaha</th>
 															<th width="100px">Jenis Produk</th>
-															<th width="100px">Pinjaman Khusus</th>
 															<th width="100px">Kode Sektor Usaha</th>
 															<th width="100px">Kode Kategori Usaha</th>
 															<th width="80px">Unggulan</th>
@@ -502,16 +519,13 @@ class DemografiController extends Controller
 										$value[21].'<td>';
 							foreach ($value[22] as $k => $v) {
 								$html .= $v.'</br>';
+								if(sizeof($value[22]) > 1){
+									$html .= '</br>';
+								}
 							}
-							$html .= '					</td>		
-															</tr>
-														</thead>
-													</table>
-												</div>
-											</div>
-										</div>
-									</div>';
+							$html .= '</td></tr>';
 						}
+						$html .= '</thead></table></div></div></div></div>';
 		            	return json_encode(array(
 		            		'flag' => 'warning',
 		    				'msg' => 'Data gagal disimpan karena ada beberapa data tidak sesuai atau salah dalam penulisan',
@@ -537,7 +551,6 @@ class DemografiController extends Controller
     			));
     		}
 		}
-		echo "asdasd";
     }
 
     public function store_demografi($params){
